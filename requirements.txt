@@ -1,0 +1,7 @@
+discord.py
+requests
+aiohttp
+beautifulsoup4
+google-cloud-speech
+pynacl
+pinterest-api
