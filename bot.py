@@ -11,7 +11,6 @@ import time
 import os
 
 
-# Replace 'your_token_here' with your bot's token
 TOKEN = os.getenv('TOKEN')
 
 # Intents
