@@ -15,7 +15,7 @@ TOKEN = os.getenv('TOKEN')
 
 # Intents
 intents = discord.Intents.default()
-intents.message_content = True  # Make sure to enable message content intent
+intents.message_content = True  
 
 # Store the start time of the bot
 start_time = time.time()
@@ -45,25 +45,25 @@ mention_responses = load_messages_from_csv('message_csv\\mention_responses.csv')
 wordsper20 = load_messages_from_csv('message_csv\\messages.csv')
 
 
-# Background task to send a message every 5 minutes
-@tasks.loop(minutes=30.0)
-async def send_periodic_message():
-    channel = bot.get_channel(1270337885286961165)  # Replace with your channel ID
-    if channel:
-        user = channel.guild.get_member(990969217866170378)  # Replace with the user ID you want to mention
-        message = random.choice(wordsper20)
-        if user:
-            message = f"{message.replace('{user}', user.mention)}"
-        await channel.send(message)
-    else:
-        print("Channel not found")
+# # Background task to send a message every 5 minutes
+# @tasks.loop(minutes=30.0)
+# async def send_periodic_message():
+#     channel = bot.get_channel(os.getenv('Channel_ID'))  # Replace with your channel ID
+#     if channel:
+#         user = channel.guild.get_member(os.getenv('member_ID'))  # Replace with the user ID you want to mention
+#         message = random.choice(wordsper20)
+#         if user:
+#             message = f"{message.replace('{user}', user.mention)}"
+#         await channel.send(message)
+#     else:
+#         print("Channel not found")
 
 
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
-    send_periodic_message.start()
+#    send_periodic_message.start()
 
 @bot.command(name='hello')
 async def hello(ctx):
@@ -276,7 +276,6 @@ async def scrape(ctx, url: str):
         await ctx.send(f'An error occurred: {e}')
 
 # command that takes a user as an argument and displays their avatar
-#set default value to the author of the message
 @bot.command(name='avatar')
 async def avatar(ctx, user: discord.User = None):
     """Displays the avatar of the specified user or the message author if no user is specified."""
@@ -373,6 +372,24 @@ async def generate_text(ctx, *, prompt: str):
         await ctx.send(response.text)
     except Exception as e:
         await ctx.send(f'An error occurred: {e}')
+
+@bot.command(name='readchat')
+async def generate_response(ctx):
+    channel = ctx.channel
+    messages = []
+    async for message in channel.history(limit=20):
+        messages.insert(0, f"{message.author.display_name}: {message.content}")
+    
+    messages.pop(len(messages) - 1)
+    prompt = "\n".join(messages)
+    
+    try:
+        print(f'The following are chat logs of the discord server. Judge the users in the server. The format is name: message - \n{prompt}')
+        response = model.generate_content(f'The following are chat logs of the discord server you are in. Judge the users in the server according to their messages, make jokes or comments, even react to their messages. The format is name: message - \n{prompt}')
+        await ctx.send(response.text)
+    except Exception as e:
+        await ctx.send(f'An error occurred: {e}')
+
 
 
 # Run the bot
