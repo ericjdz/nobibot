@@ -186,16 +186,6 @@ async def say(ctx, *, message: str):
 async def announce(ctx, channel: discord.TextChannel, *, message: str):
     await channel.send(message)
 
-@bot.event
-async def on_message(message):
-    # Check if the bot is mentioned in the message
-    if bot.user in message.mentions:
-        # Choose a random response from the list
-        response = random.choice(mention_responses)
-        await message.channel.send(f"{response} {message.author.mention}")
-
-    # Process commands if any
-    await bot.process_commands(message)
 
 @bot.command(name='say2')
 async def say2(ctx, *, message: str):
@@ -384,12 +374,46 @@ async def generate_response(ctx):
     prompt = "\n".join(messages)
     
     try:
-        print(f'The following are chat logs of the discord server. Judge the users in the server. The format is name: message - \n{prompt}')
-        response = model.generate_content(f'The following are chat logs of the discord server you are in. Judge the users in the server according to their messages, make jokes or comments, even react to their messages. The format is name: message - \n{prompt}')
+        print(f'\n\nNEW PROMPT\n{prompt}')
+        response = model.generate_content(f'You are an arrogant discord bot on a discord server, you read chat logs on a discord server and make comments about the chat logs. The following are chat logs of the discord server you are in. Respond by judging the users in the server according to their messages, make jokes or comments, or even react to their messages. You can also mention a specific user about a message they sent. \n{prompt}')
         await ctx.send(response.text)
     except Exception as e:
         await ctx.send(f'An error occurred: {e}')
 
+@bot.event
+async def on_message(message):
+    # Check if the bot is mentioned in the message
+    if bot.user in message.mentions:
+        #if there is no message after or before the mention, return a random response
+        if message.content == f'<@!{bot.user.id}>' or message.content == f'<@{bot.user.id}>':
+            response = random.choice(mention_responses)
+            await message.channel.send(f"{response} {message.author.mention}")
+        else:
+            # create a prompt with the message
+            Mcontent = message.content.replace(f'<@!{bot.user.id}>', '@NobiBot').replace(f'<@{bot.user.id}>', '@NobiBot')
+            print(Mcontent)
+            prompt = f'{message.author.display_name}: {Mcontent}'
+            print(f'\n\nNEW PROMPT\n{prompt}')
+            try:
+                response = model.generate_content(f'You are an arrogant discord bot named NobiBot. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
+                if response.text == "":
+                    response = model.generate_content(f'You are an arrogant discord bot named NobiBot. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
+                await message.channel.send(response.text)
+            except Exception as e:
+                print(f'An error occurred: {e}')
+                await message.channel.send(f'Can you repeat that?')
+
+
+# @bot.event
+# async def on_message(message):
+#     # Check if the bot is mentioned in the message
+#     if bot.user in message.mentions:
+#         # Choose a random response from the list
+#         response = random.choice(mention_responses)
+#         await message.channel.send(f"{response} {message.author.mention}")
+
+#     # Process commands if any
+#     await bot.process_commands(message)
 
 
 # Run the bot
