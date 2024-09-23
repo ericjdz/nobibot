@@ -32,7 +32,7 @@ generation_config = {
   "max_output_tokens": 8192,
   "response_mime_type": "text/plain",
 }
-model = genai.GenerativeModel(model_name="tunedModels/nobi-bot-sk54degtx8qr", generation_config=generation_config)
+model = genai.GenerativeModel(model_name="gemini-1.5-flash", generation_config=generation_config)
 
 
 
@@ -74,28 +74,47 @@ wordsper20 = load_messages_from_csv('message_csv\\messages.csv')
 #         await channel.send(message)
 #     else:
 #         print("Channel not found")
+
 @bot.event
 async def on_message(message):
+    # Avoid the bot responding to its own messages
+    if message.author == bot.user:
+        return
+
     # Check if the bot is mentioned in the message
     if bot.user in message.mentions:
-        #if there is no message after or before the mention, return a random response
+        # If there is no message after or before the mention, return a random response
         if message.content == f'<@!{bot.user.id}>' or message.content == f'<@{bot.user.id}>':
             response = random.choice(mention_responses)
             await message.channel.send(f"{response} {message.author.mention}")
         else:
-            # create a prompt with the message
+            # Create a prompt with the message
             Mcontent = message.content.replace(f'<@!{bot.user.id}>', '@NobiBot').replace(f'<@{bot.user.id}>', '@NobiBot')
-            print(Mcontent)
             prompt = f'{message.author.display_name}: {Mcontent}'
             print(f'\n\nNEW PROMPT\n{prompt}')
-            try:
-                response = model.generate_content(f'You are an arrogant discord bot named NobiBot. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
-                if response.text == "":
-                    response = model.generate_content(f'You are an arrogant discord bot named NobiBot. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
-                await message.channel.send(response.text)
-            except Exception as e:
-                print(f'An error occurred: {e}')
-                await message.channel.send(f'Can you repeat that?')
+
+            response_text = ""
+            attempts = 0
+
+            while attempts < 5:  # Limit retries to avoid infinite loops
+                try:
+                    response = model.generate_content(f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
+                    response_text = response.text
+                    if response_text:
+                        break  # Exit loop if a valid response is obtained
+                    attempts += 1
+                    print('Empty response, trying again')
+                except Exception as e:
+                    print(f'An error occurred: {e}')
+                    attempts += 1
+
+            if not response_text:  # Fallback if still no response
+                response_text = "I couldn't think of a reply, but I'm still awesome!"
+
+            await message.channel.send(response_text)
+
+    # Ensure commands are processed after the custom on_message logic
+    await bot.process_commands(message)
 
 
 @bot.event
@@ -395,19 +414,43 @@ async def generate_text(ctx, *, prompt: str):
 async def generate_response(ctx):
     channel = ctx.channel
     messages = []
+
+    # Fetch the last 20 messages in the channel
     async for message in channel.history(limit=20):
         messages.insert(0, f"{message.author.display_name}: {message.content}")
-    
-    messages.pop(len(messages) - 1)
-    prompt = "\n".join(messages)
-    
-    try:
-        print(f'\n\nNEW PROMPT\n{prompt}')
-        response = model.generate_content(f'You are an arrogant discord bot on a discord server, you read chat logs on a discord server and make comments about the chat logs. The following are chat logs of the discord server you are in. Respond by judging the users in the server according to their messages, make jokes or comments, or even react to their messages. You can also mention a specific user about a message they sent. \n{prompt}')
-        await ctx.send(response.text)
-    except Exception as e:
-        await ctx.send(f'An error occurred: {e}')
 
-        
+    # Remove the last message if it was sent by the bot
+    messages.pop(len(messages) - 1)
+
+    # Join messages into a single prompt
+    prompt = "\n".join(messages)
+
+    attempts = 3  # Number of attempts
+    response_text = ""
+
+    for attempt in range(attempts):
+        try:
+            print(f'\n\nNEW PROMPT\n{prompt}')
+            response = model.generate_content(
+                f'You are an arrogant discord bot on a discord server and act like an autistic little nerd kid. You read chat logs and make comments about the chat logs. The following are chat logs: \n{prompt}'
+            )
+
+            # Check for empty response
+            if response.text.strip():
+                response_text = response.text
+                break  # Exit loop if we have a valid response
+            else:
+                print(f'Attempt {attempt + 1} returned an empty response, trying again.')
+
+        except Exception as e:
+            print(f'An error occurred on attempt {attempt + 1}: {e}')
+            # Optionally, you can wait before retrying
+            await asyncio.sleep(1)  # Adjust the delay as needed
+
+    if response_text:
+        await ctx.send(response_text)
+    else:
+        await ctx.send("Sorry, I couldn't come up with anything to say about that.")
+
 # Run the bot
 bot.run(TOKEN)
