@@ -9,6 +9,7 @@ import requests
 from discord.ext import commands, tasks
 import time
 import os
+import google.generativeai as genai
 
 
 TOKEN = os.getenv('TOKEN')
@@ -19,6 +20,22 @@ intents.message_content = True
 
 # Store the start time of the bot
 start_time = time.time()
+
+
+
+genai.configure(api_key=os.getenv('GENAPI'))
+
+generation_config = {
+  "temperature": 1,
+  "top_p": 0.95,
+  "top_k": 64,
+  "max_output_tokens": 8192,
+  "response_mime_type": "text/plain",
+}
+model = genai.GenerativeModel(model_name="tunedModels/nobi-bot-sk54degtx8qr", generation_config=generation_config)
+
+
+
 
 # Bot prefix
 bot = commands.Bot(command_prefix='?', intents=intents)
@@ -57,6 +74,28 @@ wordsper20 = load_messages_from_csv('message_csv\\messages.csv')
 #         await channel.send(message)
 #     else:
 #         print("Channel not found")
+@bot.event
+async def on_message(message):
+    # Check if the bot is mentioned in the message
+    if bot.user in message.mentions:
+        #if there is no message after or before the mention, return a random response
+        if message.content == f'<@!{bot.user.id}>' or message.content == f'<@{bot.user.id}>':
+            response = random.choice(mention_responses)
+            await message.channel.send(f"{response} {message.author.mention}")
+        else:
+            # create a prompt with the message
+            Mcontent = message.content.replace(f'<@!{bot.user.id}>', '@NobiBot').replace(f'<@{bot.user.id}>', '@NobiBot')
+            print(Mcontent)
+            prompt = f'{message.author.display_name}: {Mcontent}'
+            print(f'\n\nNEW PROMPT\n{prompt}')
+            try:
+                response = model.generate_content(f'You are an arrogant discord bot named NobiBot. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
+                if response.text == "":
+                    response = model.generate_content(f'You are an arrogant discord bot named NobiBot. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
+                await message.channel.send(response.text)
+            except Exception as e:
+                print(f'An error occurred: {e}')
+                await message.channel.send(f'Can you repeat that?')
 
 
 @bot.event
@@ -342,17 +381,6 @@ async def pinterest_search(ctx, *, query):
         await ctx.send("No results found.")
  
  
-import google.generativeai as genai
-genai.configure(api_key=os.getenv('GENAPI'))
-
-generation_config = {
-  "temperature": 1,
-  "top_p": 0.95,
-  "top_k": 64,
-  "max_output_tokens": 8192,
-  "response_mime_type": "text/plain",
-}
-model = genai.GenerativeModel(model_name="tunedModels/nobi-bot-sk54degtx8qr", generation_config=generation_config)
 
 @bot.command(name='generate')
 async def generate_text(ctx, *, prompt: str):
@@ -380,41 +408,6 @@ async def generate_response(ctx):
     except Exception as e:
         await ctx.send(f'An error occurred: {e}')
 
-@bot.event
-async def on_message(message):
-    # Check if the bot is mentioned in the message
-    if bot.user in message.mentions:
-        #if there is no message after or before the mention, return a random response
-        if message.content == f'<@!{bot.user.id}>' or message.content == f'<@{bot.user.id}>':
-            response = random.choice(mention_responses)
-            await message.channel.send(f"{response} {message.author.mention}")
-        else:
-            # create a prompt with the message
-            Mcontent = message.content.replace(f'<@!{bot.user.id}>', '@NobiBot').replace(f'<@{bot.user.id}>', '@NobiBot')
-            print(Mcontent)
-            prompt = f'{message.author.display_name}: {Mcontent}'
-            print(f'\n\nNEW PROMPT\n{prompt}')
-            try:
-                response = model.generate_content(f'You are an arrogant discord bot named NobiBot. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
-                if response.text == "":
-                    response = model.generate_content(f'You are an arrogant discord bot named NobiBot. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
-                await message.channel.send(response.text)
-            except Exception as e:
-                print(f'An error occurred: {e}')
-                await message.channel.send(f'Can you repeat that?')
-
-
-# @bot.event
-# async def on_message(message):
-#     # Check if the bot is mentioned in the message
-#     if bot.user in message.mentions:
-#         # Choose a random response from the list
-#         response = random.choice(mention_responses)
-#         await message.channel.send(f"{response} {message.author.mention}")
-
-#     # Process commands if any
-#     await bot.process_commands(message)
-
-
+        
 # Run the bot
 bot.run(TOKEN)
