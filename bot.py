@@ -81,16 +81,30 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Check if the bot is mentioned in the message
-    if bot.user in message.mentions:
-        # If there is no message after or before the mention, return a random response
+    # Check if the bot is mentioned in the message or the message is a reply to the bot
+    if bot.user in message.mentions or (message.reference and message.reference.resolved and message.reference.resolved.author == bot.user):
+        # Check if the message is a reply to another message
+        if message.reference and message.reference.resolved:
+            original_message = message.reference.resolved
+            original_author = original_message.author.display_name
+            original_content = original_message.content
+        else:
+            original_content = None
+
+        # If there's no content except the mention, send a random response
         if message.content == f'<@!{bot.user.id}>' or message.content == f'<@{bot.user.id}>':
             response = random.choice(mention_responses)
             await message.channel.send(f"{response} {message.author.mention}")
         else:
             # Create a prompt with the message
             Mcontent = message.content.replace(f'<@!{bot.user.id}>', '@NobiBot').replace(f'<@{bot.user.id}>', '@NobiBot')
-            prompt = f'{message.author.display_name}: {Mcontent}'
+
+            # If the message is a reply, include the original message content in the prompt
+            if original_content:
+                prompt = f'{message.author.display_name}: {Mcontent}\n{message.author.display_name} is replying to {original_author} with message: {original_content}'
+            else:
+                prompt = f'{message.author.display_name}: {Mcontent}'
+
             print(f'\n\nNEW PROMPT\n{prompt}')
 
             response_text = ""
@@ -98,7 +112,9 @@ async def on_message(message):
 
             while attempts < 5:  # Limit retries to avoid infinite loops
                 try:
-                    response = model.generate_content(f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}')
+                    response = model.generate_content(
+                        f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}'
+                    )
                     response_text = response.text
                     if response_text:
                         break  # Exit loop if a valid response is obtained
@@ -117,6 +133,7 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
@@ -125,10 +142,12 @@ async def on_ready():
 
 @bot.command(name='hello')
 async def hello(ctx):
+    """Says hello!"""
     await ctx.send('Hello!')
 
 @bot.command(name='love')
 async def love(ctx, *args):
+    """x loves y"""
     if len(args) < 2:
         await ctx.send("Please provide at least one mention and a message.")
         return
@@ -151,6 +170,7 @@ async def love(ctx, *args):
 
 @bot.command(name='random')
 async def random_command(ctx, *args):
+    """Returns a random message"""
     # Select a random message from the list
     response = random.choice(random_poems)
     # Send the message
@@ -191,6 +211,7 @@ async def random_cat(ctx):
 
 @bot.command(name='8ball')
 async def eight_ball(ctx, *, question: str):
+    """ Ask the magic 8-ball a question. """
     responses = [
         "It is certain.",
         "It is decidedly so.",
@@ -218,6 +239,7 @@ async def eight_ball(ctx, *, question: str):
 
 @bot.command(name='catfact')    
 async def cat_fact(ctx):
+    """Fetches a random cat fact."""
     async with aiohttp.ClientSession() as session:
         async with session.get('https://catfact.ninja/fact') as response:
             if response.status != 200:
@@ -228,6 +250,7 @@ async def cat_fact(ctx):
 
 @bot.command(name='dogfact')
 async def dog_fact(ctx):
+    """Fetches a random dog fact."""
     async with aiohttp.ClientSession() as session:
         async with session.get('https://dog-api.kinduff.com/api/facts') as response:
             if response.status != 200:
@@ -238,15 +261,18 @@ async def dog_fact(ctx):
 
 @bot.command(name='say')
 async def say(ctx, *, message: str):
+    """Repeats a message."""
     await ctx.send(message)
 
 @bot.command(name='announce')
 async def announce(ctx, channel: discord.TextChannel, *, message: str):
+    """Announces a message in the specified channel."""
     await channel.send(message)
 
 
 @bot.command(name='say2')
 async def say2(ctx, *, message: str):
+    """Repeats a message and deletes the original message."""
     await ctx.send(message)  # Send the user's message
     await ctx.message.delete()  # Delete the original command message
 
@@ -270,6 +296,7 @@ async def random_joke(ctx):
 # command that takes a message as an argument and counts the number of characters
 @bot.command(name='count')
 async def count(ctx, *, message: str):
+    """Counts the number of characters in a message."""
     # count the number of characters in the message
     num_chars = len(message)
     await ctx.send(f"The message '{message}' has {num_chars} characters.")
@@ -331,6 +358,19 @@ async def avatar(ctx, user: discord.User = None):
         user = ctx.author
     await ctx.send(user.display_avatar.url)
 
+# command that takes a user as an argument and displays their banner
+@bot.command(name='banner')
+async def banner(ctx, user: discord.User = None):
+    """Displays the banner of the specified user or the message author if no user is specified."""
+    if user is None:
+        user = ctx.author
+    # Use fetch_user to get the full user object with banner info
+    user = await bot.fetch_user(user.id)
+    if user.banner:
+        await ctx.send(user.banner.url)
+    else:
+        await ctx.send(f"{user.display_name} doesn't have a banner.")
+
 import json
 # Define your Custom Search Engine ID and API Key
 CSE_ID = os.getenv('CSE')
@@ -360,6 +400,7 @@ async def search_pinterest(query):
 # Command to perform Pinterest search and display images with reaction navigation
 @bot.command(name='pinterest')
 async def pinterest_search(ctx, *, query):
+    """Searches Pinterest for images based on the specified query."""
     images = await search_pinterest(query)
     if images:
         current_index = 0  # Track the current image index
@@ -412,6 +453,7 @@ async def generate_text(ctx, *, prompt: str):
 
 @bot.command(name='readchat')
 async def generate_response(ctx):
+    """Generates a response based on the last 20 messages in the channel."""
     channel = ctx.channel
     messages = []
 
