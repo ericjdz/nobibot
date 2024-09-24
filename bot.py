@@ -80,6 +80,37 @@ async def on_message(message):
     # Avoid the bot responding to its own messages
     if message.author == bot.user:
         return
+    
+    # Check if the message is in a DM channel
+    if isinstance(message.channel, discord.DMChannel):
+        # Create a prompt with the DM message content
+        prompt = f'Direct message from {message.author.display_name}: {message.content}'
+        
+        print(f'\n\nNEW DM PROMPT\n{prompt}')
+
+        response_text = ""
+        attempts = 0
+
+        while attempts < 5:  # Limit retries to avoid infinite loops
+            try:
+                response = model.generate_content(
+                    f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this DM message as an arrogant discord bot, but still provide the answer.\n{prompt}'
+                )
+                response_text = response.text
+                if response_text:
+                    break  # Exit loop if a valid response is obtained
+                attempts += 1
+                print('Empty response, trying again')
+            except Exception as e:
+                print(f'An error occurred: {e}')
+                attempts += 1
+
+        if not response_text:  # Fallback if still no response
+            response_text = "I couldn't think of a reply, but I'm still awesome!"
+
+        await message.channel.send(response_text)  # Send the response back to the DM
+        return  # Skip further processing for DMs
+
 
     # Check if the bot is mentioned in the message or the message is a reply to the bot
     if bot.user in message.mentions or (message.reference and message.reference.resolved and message.reference.resolved.author == bot.user):
