@@ -80,12 +80,20 @@ async def on_message(message):
     # Avoid the bot responding to its own messages
     if message.author == bot.user:
         return
-    
+
     # Check if the message is in a DM channel
     if isinstance(message.channel, discord.DMChannel):
         # Create a prompt with the DM message content
         prompt = f'Direct message from {message.author.display_name}: {message.content}'
-        
+
+        # If there's a reply to another message, include that in the prompt
+        if message.reference and message.reference.resolved:
+            original_message = message.reference.resolved
+            original_author = original_message.author.display_name
+            original_content = original_message.content
+            prompt = f'{message.author.display_name} is replying to {original_author} with message: {original_content}\n' + prompt
+
+        # Log the new prompt
         print(f'\n\nNEW DM PROMPT\n{prompt}')
 
         response_text = ""
@@ -110,6 +118,40 @@ async def on_message(message):
 
         await message.channel.send(response_text)  # Send the response back to the DM
         return  # Skip further processing for DMs
+
+    # Check if the bot is mentioned in a regular message
+    if bot.user in message.mentions:
+        # Create a prompt based on the message content
+        Mcontent = message.content.replace(f'<@!{bot.user.id}>', '@NobiBot').replace(f'<@{bot.user.id}>', '@NobiBot')
+
+        # Log the prompt for regular messages
+        print(f'\n\nNEW MESSAGE PROMPT\n{Mcontent}')
+
+        response_text = ""
+        attempts = 0
+
+        while attempts < 5:  # Limit retries to avoid infinite loops
+            try:
+                response = model.generate_content(
+                    f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{Mcontent}'
+                )
+                response_text = response.text
+                if response_text:
+                    break  # Exit loop if a valid response is obtained
+                attempts += 1
+                print('Empty response, trying again')
+            except Exception as e:
+                print(f'An error occurred: {e}')
+                attempts += 1
+
+        if not response_text:  # Fallback if still no response
+            response_text = "I couldn't think of a reply, but I'm still awesome!"
+
+        await message.channel.send(response_text)
+
+    # Ensure commands are processed after the custom on_message logic
+    await bot.process_commands(message)
+
 
 
     # Check if the bot is mentioned in the message or the message is a reply to the bot
