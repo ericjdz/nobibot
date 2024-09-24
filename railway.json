@@ -2,7 +2,7 @@
     "build": {
       "nixpacks": {
         "phases": {
-          "start": "python bot.py"
+          "start": "py bot.py"
         }
       }
     }
