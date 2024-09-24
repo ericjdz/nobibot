@@ -84,14 +84,14 @@ async def on_message(message):
     # Check if the message is in a DM channel
     if isinstance(message.channel, discord.DMChannel):
         # Create a prompt with the DM message content
-        prompt = f'Direct message from {message.author.display_name}: {message.content}'
+        prompt = f'{message.author.display_name} replied with: {message.content}'
 
         # If there's a reply to another message, include that in the prompt
         if message.reference and message.reference.resolved:
             original_message = message.reference.resolved
             original_author = original_message.author.display_name
             original_content = original_message.content
-            prompt = f'{message.author.display_name} is replying to {original_author} with message: {original_content}\n' + prompt
+            prompt = f'{message.author.display_name} is replying to {original_author} and the message: {original_content}\n' + prompt
 
         # Log the new prompt
         print(f'\n\nNEW DM PROMPT\n{prompt}')
@@ -102,7 +102,7 @@ async def on_message(message):
         while attempts < 5:  # Limit retries to avoid infinite loops
             try:
                 response = model.generate_content(
-                    f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this DM message as an arrogant discord bot, but still provide the answer.\n{prompt}'
+                    f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this DM message or reply as an arrogant discord bot, but still provide the answer.\n{prompt}'
                 )
                 response_text = response.text
                 if response_text:
