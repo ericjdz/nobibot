@@ -1,0 +1,10 @@
+{
+    "build": {
+      "nixpacks": {
+        "phases": {
+          "start": "python bot.py"
+        }
+      }
+    }
+  }
+  

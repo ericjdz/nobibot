@@ -130,3 +130,5 @@ cython_debug/
 # Google Cloud credentials
 *.json
 .env
+
+!railway.json
