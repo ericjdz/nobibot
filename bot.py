@@ -211,6 +211,8 @@ async def on_message(message):
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
+    activity = discord.Game(name="@ me, DM me or something or do ?help")
+    await bot.change_presence(activity=activity)
 #    send_periodic_message.start()
 
 @bot.command(name='hello')
