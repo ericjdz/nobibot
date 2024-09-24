@@ -54,12 +54,12 @@ def load_messages_from_csv(filepath):
 
 
 # List of random poems
-random_poems = load_messages_from_csv('message_csv\\random_poems.csv')
+random_poems = load_messages_from_csv('message_csv/random_poems.csv')
 
 # List of possible responses when the bot is mentioned
-mention_responses = load_messages_from_csv('message_csv\\mention_responses.csv')
+mention_responses = load_messages_from_csv('message_csv/mention_responses.csv')
 
-wordsper20 = load_messages_from_csv('message_csv\\messages.csv')
+wordsper20 = load_messages_from_csv('message_csv/messages.csv')
 
 
 # # Background task to send a message every 5 minutes
