@@ -13,7 +13,6 @@ import google.generativeai as genai
 
 
 TOKEN = os.getenv('TOKEN')
-print(f'Token: {TOKEN}')
 
 # Intents
 intents = discord.Intents.default()
