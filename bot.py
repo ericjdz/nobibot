@@ -102,7 +102,7 @@ async def on_message(message):
         while attempts < 5:  # Limit retries to avoid infinite loops
             try:
                 response = model.generate_content(
-                    f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this DM message or reply as an arrogant discord bot, but still provide the answer.\n{prompt}'
+                    f'Answer with only a few sentences (1 to 2), unless prompted to provide a longer answer. You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this DM message or reply as an arrogant discord bot, but still provide the answer.\n{prompt}'
                 )
                 response_text = response.text
                 if response_text:
@@ -151,7 +151,7 @@ async def on_message(message):
             while attempts < 5:  # Limit retries to avoid infinite loops
                 try:
                     response = model.generate_content(
-                        f'You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}'
+                        f'Answer with only a few sentences (1 to 2), unless prompted to provide a longer answer. You are an arrogant discord bot named NobiBot and you act like an autistic little nerd kid. Respond to this message of this user as an arrogant discord bot, but still provide the answer.\n{prompt}'
                     )
                     response_text = response.text
                     if response_text:
@@ -514,7 +514,7 @@ async def generate_response(ctx):
         try:
             print(f'\n\nNEW PROMPT\n{prompt}')
             response = model.generate_content(
-                f'You are an arrogant discord bot on a discord server and act like an autistic little nerd kid. You read chat logs and make comments about the chat logs. The following are chat logs: \n{prompt}'
+                f'Answer with only a few sentences (1 to 2), unless prompted to provide a longer answer. You are an arrogant discord bot on a discord server and act like an autistic little nerd kid. You read chat logs and make comments about the chat logs. The following are chat logs: \n{prompt}'
             )
 
             # Check for empty response
