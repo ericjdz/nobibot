@@ -488,7 +488,11 @@ async def marketing(ctx,*, prompt: str):
     try:
         response = model.generate_content(f"Generate a step by step social media marketing guide for this service or product: {prompt}")
         print(response.text)
-        await ctx.send(response.text)
+        #split the response into a list of strings
+        response_list = response.text.split("\n")
+        #print all 
+        for i in response_list:
+            await ctx.send(i)
     except Exception as e:
         await ctx.send(f'An error occurred: {e}')
 
