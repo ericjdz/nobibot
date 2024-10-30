@@ -534,5 +534,15 @@ async def generate_response(ctx):
     else:
         await ctx.send("Sorry, I couldn't come up with anything to say about that.")
 
+#command (make marketing strategy)
+@bot.command(name='marketing')
+async def marketing(ctx,*, prompt: str):
+    """Generates a marketing strategy based on the specified prompt."""
+    try:
+        response = model.generate_content(f"Generate a step by step social media marketing guide for this service or product: {prompt}")
+        await ctx.send(response.text)
+    except Exception as e:
+        await ctx.send(f'An error occurred: {e}')
+
 # Run the bot
 bot.run(TOKEN)
