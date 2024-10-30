@@ -492,6 +492,8 @@ async def marketing(ctx,*, prompt: str):
         response_list = response.text.split("\n")
         #print all 
         for i in response_list:
+            if i == "":
+                continue
             await ctx.send(i)
     except Exception as e:
         await ctx.send(f'An error occurred: {e}')
